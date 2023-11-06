@@ -1,5 +1,5 @@
 from django.contrib import admin
-from blog.models import Post
+from blog.models import Post, Comment
 
 
 @admin.register(Post)
@@ -14,3 +14,10 @@ class PostAdmin(admin.ModelAdmin):
     # навигационные ссылки для навигации по иерархии дат
     date_hierarchy = 'publish'
     ordering = ['status', 'publish']
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ['name', 'email', 'post', 'created', 'moderated']
+    list_filter = ['moderated', 'created', 'updated']
+    search_fields = ['name', 'email', 'body']
