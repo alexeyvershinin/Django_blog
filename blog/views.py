@@ -1,14 +1,20 @@
 from django.core.mail import send_mail
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db.models import Count
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_POST
+from taggit.models import Tag
 
 from .forms import EmailPostForm, CommentForm
 from .models import Post
 
 
-def post_list(request):
+def post_list(request, tag_slug=None):
     post_list = Post.published.all()
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        post_list = post_list.filter(tags__in=[tag])
     # пагинация
     paginator = Paginator(post_list, 5)
     page_number = request.GET.get('page', 1)
@@ -20,7 +26,11 @@ def post_list(request):
     except EmptyPage:
         # Если page_number находится вне диапазона, то выдать последнюю страницу результатов
         posts = paginator.page(paginator.num_pages)
-    return render(request, 'blog/post/list.html', {'posts': posts})
+    context = {
+        'posts': posts,
+        'tag': tag
+    }
+    return render(request, 'blog/post/list.html', context)
 
 
 def post_detail(request, year, month, day, post):
@@ -28,6 +38,7 @@ def post_detail(request, year, month, day, post):
                              publish__day=day)
     comments = post.comments.filter(moderated=True)
     form = CommentForm()
+
     context = {
         'post': post,
         'comments': comments,
@@ -47,7 +58,7 @@ def post_share(request, post_id):
             subject = f"{cleaned_data['name']} recommends you read " \
                       f"{post.title}"
             message = f"Read {post.title} at {post_url}\n\n" \
-                      f"{cleaned_data['name']}\'s comments: {cleaned_data['comments']}\n"\
+                      f"{cleaned_data['name']}\'s comments: {cleaned_data['comments']}\n" \
                       f"You can contact the author of the post by email: {cleaned_data['email']}"
             send_mail(subject, message, 'your_account@gmail.com', [cleaned_data['to']])
             sent = True
