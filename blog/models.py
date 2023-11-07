@@ -3,7 +3,6 @@ from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth.models import User
 from taggit.managers import TaggableManager
-from taggit.models import TagBase
 
 
 class PublishedManager(models.Manager):
